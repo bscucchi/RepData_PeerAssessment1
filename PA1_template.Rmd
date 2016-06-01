@@ -1,0 +1,106 @@
+---
+title: "Reproducible Research Project 1"
+author: "Brandon"
+date: "May 31, 2016"
+output: html_document
+---
+
+### Basic settings
+```{r}
+echo = TRUE  # Always make code visible
+options(scipen = 1)  # Turn off scientific notations for numbers
+```
+
+# 1. Code for reading in the dataset and/or processing the data
+```{r}
+filename <- unzip("repdata-data-activity.zip")
+activity <- read.csv(filename, stringsAsFactors = FALSE)
+str(activity)
+
+# Format of Date
+
+activity$date <- as.Date(activity$date)
+str(activity)
+```
+# 2. Histogram of the total number of steps taken each day
+```{r}
+activity_rm<-activity[which(!is.na(activity$steps)),]
+perday<-tapply(activity_rm$steps, activity_rm$date, sum)
+hist(perday,10, main = "Total number of steps taken per day", xlab = "")
+```
+# 3. Mean and median number of steps taken each day
+```{r}
+mean(perday)
+```
+```{r}
+median(perday)
+```
+# 4. Time series plot of the average number of steps taken
+```{r}
+dailyact<-tapply(activity_rm$steps, activity_rm$interval, mean)
+plot(y = dailyact, x = names(dailyact), type = "l", xlab = "5-Minute-Interval", 
+    main = "Daily Activity Pattern", ylab = "Average number of steps")
+```
+# 5 The 5-minute interval that, on average, contains the maximum number of steps
+```{r}
+dailyact[dailyact==max(dailyact)]
+```
+#6 Code to describe and show a strategy for imputing missing data
+```{r}
+sum(is.na(activity$steps))
+sum(is.na(activity))
+act_new <- activity
+act_new[which(is.na(act_new$steps)),1]<-
+        dailyact[as.character(act_new[which(is.na(act_new$steps)),3])]
+sum(is.na(act_new))
+```
+# 7 Histogram of the total number of steps taken each day after missing values are imputed
+```{r}
+perday_new<-tapply(act_new$steps, act_new$date, sum)
+par(mfrow=c(1,2))
+hist(perday,10, main = "Total number of steps taken per day", xlab = "Steps"
+     , ylim =c(0, 25))
+abline(v = median(perday), col = 4, lwd = 4)     
+hist(perday_new,10, main = "Total number of steps taken per day  
+     (missing values replaced with mean of interval)", xlab = "Steps",
+     ylim =c(0, 25))     
+abline(v = median(perday_new), col = 4, lwd = 4)     
+```
+
+#8 Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+```{r}
+
+act_new$wd<-weekdays(act_new$date)
+act_new$fwd<- as.factor(c("weekend", "weekday"))
+act_new[act_new$wd == "Sunday" | act_new$wd == "Saturday" ,5]<- factor("weekend")
+act_new[!(act_new$wd == "Sunday" | act_new$wd == "Saturday"),5 ]<- factor("weekday")
+
+act_new_we <- subset(act_new, fwd == "weekend") 
+act_new_wd <- subset(act_new, fwd == "weekday") 
+dailyact_we<-tapply(act_new_we$steps, act_new_we$interval, mean)
+dailyact_wd<-tapply(act_new_wd$steps, act_new_wd$interval, mean)
+par(mfrow=c(2,1))
+plot(y = dailyact_wd, x = names(dailyact_wd), type = "l", xlab = "5-Minute Interval", 
+     main = "Daily Activity Pattern on Weekdays", ylab = "Average number of steps", 
+     ylim =c(0, 250))
+plot(y = dailyact_we, x = names(dailyact_we), type = "l", xlab = "5-Minute Interval", 
+     main = "Daily Activity Pattern on Weekends", ylab = "Average number of steps", 
+     ylim =c(0, 250))
+```
+
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
